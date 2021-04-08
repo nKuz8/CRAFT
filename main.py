@@ -1,3 +1,5 @@
+import struct
+import time
 key = [[0x2, 0x7, 0xa, 0x6, 0x7, 0x8, 0x1, 0xa, 0x4, 0x3, 0xf, 0x3, 0x6, 0x4, 0xb, 0xc],
         [0x9, 0x1, 0x6, 0x7, 0x0, 0x8, 0xd, 0x5, 0xf, 0xb, 0xb, 0x5, 0xa, 0xe, 0xf, 0xe]]
 # key = [[0]*16, [0]*16]
@@ -76,16 +78,74 @@ def Round(state, rnd, decrypt=False):
     return state
 
 
+def encrypt(input, output):
+    with open(input, "rb") as file_in:
+        with open(output, "wb") as file_out:
+            block = "abcdefgh"
+            flag = False
+            while not flag:
+                block = file_in.read(8)
+                if len(block) < 8:
+                    flag = True
+                    block = struct.pack('8s', block)
+
+                state = [0] * 16
+                for i in range(8):
+                    state[2 * i] = (block[i] & 0xf0) >> 4
+                    state[2 * i + 1] = block[i] & 0xf
+                for i in range(32):
+                    state = Round(state, i)
+                to_print = [0] * 8
+                for i in range(8):
+                    to_print[i] = (state[2 * i] << 4) | state[2 * i + 1]
+
+                # test = bytes(to_print)
+                # print(test)
+                file_out.write(bytes(to_print))
+
+
+def decrypt(input, output):
+    with open(input, "rb") as file_in:
+        with open(output, "wb") as file_out:
+            block = "abcdefgh"
+            flag = False
+            while not flag:
+                block = file_in.read(8)
+                length = len(block)
+                if len(block) < 8:
+                    flag = True
+                    block = struct.pack('8s', block)
+
+                state = [0] * 16
+                for i in range(8):
+                    state[2 * i] = (block[i] & 0xf0) >> 4
+                    state[2 * i + 1] = block[i] & 0xf
+                for i in range(32):
+                    state = Round(state, i, True)
+                to_print = [0] * length
+                for i in range(length):
+                    to_print[i] = (state[2 * i] << 4) | state[2 * i + 1]
+
+                # test = bytes(to_print)
+                # print(test)
+                file_out.write(bytes(to_print))
+
+
 def main():
-    with open("OT.txt", "rb") as file:
-        print(file.read(8))
-    state = [0x5, 0x7, 0x3, 0x4, 0xf, 0x0, 0x0, 0x6, 0xd, 0x8, 0xd, 0x8, 0x8, 0xa, 0x3, 0xe]
+    # encrypt("picture.png", "CT.txt")
+    # decrypt("CT.txt", "result.png")
+
     # state = [0]*16
-    # initialize_tweakey()
+    start_time = time.time()
+    initialize_tweakey()
     # for item in TK:
-    #     print(list(map(lambda x: hex(x), item)))
-    # for i in range(32):
-    #     state = Round(state, i)
+        # print(list(map(lambda x: hex(x), item)))
+    for j in range(10**6):
+        state = [0x5, 0x7, 0x3, 0x4, 0xf, 0x0, 0x0, 0x6, 0xd, 0x8, 0xd, 0x8, 0x8, 0xa, 0x3, 0xe]
+        for i in range(32):
+            state = Round(state, i)
+    end_time = time.time()
+    print("1 block cypher time: {}".format(end_time - start_time))
     #     print("Round {}: {}".format(i, list(map(lambda x: hex(x), state))))
     # print()
     # initialize_tweakey(True)
