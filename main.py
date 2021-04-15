@@ -87,7 +87,9 @@ def encrypt(input, output):
                 block = file_in.read(8)
                 if len(block) < 8:
                     flag = True
-                    block = struct.pack('8s', block)
+                    if len(block) > 0:
+                        block += b"\x80"
+                        block += b"\x00" * (8 - len(block))
 
                 state = [0] * 16
                 for i in range(8):
